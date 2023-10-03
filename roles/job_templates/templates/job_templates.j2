@@ -1,0 +1,82 @@
+---
+{% for job_template in job_templates_lookup_results|from_yaml|selectattr('project') %}
+  - name: "{{ job_template.name }}"
+    description: "{{ job_template.description }}"
+    organization: "{{ job_template.summary_fields.organization.name }}"
+    project: "{{ job_template.summary_fields.project.name }}"
+{% if job_template.inventory %}
+    inventory: "{{ job_template.summary_fields.inventory.name }}"
+{% endif %}
+    playbook: "{{ job_template.playbook }}"
+    job_type: "{{ job_template.job_type }}"
+    use_fact_cache: "{{ job_template.use_fact_cache }}"
+{% if job_template.summary_fields.credentials %}
+    credentials:
+{% for credential in job_template.summary_fields.credentials %}
+      - "{{ credential.name }}"
+{% endfor %}
+{% endif %}
+    diff_mode: "{{ job_template.diff_mode }}"
+    allow_simultaneous: "{{ job_template.allow_simultaneous }}"
+    ask_scm_branch_on_launch: "{{ job_template.ask_scm_branch_on_launch }}"
+    ask_tags_on_launch: "{{ job_template.ask_tags_on_launch }}"
+    ask_verbosity_on_launch: "{{ job_template.ask_verbosity_on_launch }}"
+    ask_variables_on_launch: "{{ job_template.ask_variables_on_launch }}"
+    forks: "{{ job_template.forks }}"
+    limit: "{{ job_template.limit }}"
+    verbosity: "{{ job_template.verbosity }}"
+    job_tags: "{{ job_template.job_tags }}"
+    force_handlers: "{{ job_template.force_handlers }}"
+    skip_tags: "{{ job_template.skip_tags }}"
+    start_at_task: "{{ job_template.start_at_task }}"
+    host_config_key: "{{ job_template.host_config_key }}"
+    ask_diff_mode_on_launch: "{{ job_template.ask_diff_mode_on_launch }}"
+    ask_limit_on_launch: "{{ job_template.ask_limit_on_launch }}"
+    ask_skip_tags_on_launch: "{{ job_template.ask_skip_tags_on_launch }}"
+    ask_inventory_on_launch: "{{ job_template.ask_inventory_on_launch }}"
+    ask_credential_on_launch: "{{ job_template.ask_credential_on_launch }}"
+    become_enabled: "{{ job_template.become_enabled }}"
+    timeout: "{{ job_template.timeout }}"
+    job_slice_count: "{{ job_template.job_slice_count }}"
+    scm_branch: "{{ job_template.scm_branch }}"
+{% if job_template.extra_vars and job_template.extra_vars != '---' and job_template.extra_vars != '' %}
+    extra_vars:
+      {{ job_template.extra_vars | from_yaml | to_nice_yaml(indent=2) | indent(width=6, first=False) | replace("'{{", "!unsafe \'{{") }}
+{%- endif %}
+    custom_virtualenv: "{{ job_template.custom_virtualenv | default(omit) }}"
+{% if job_template.summary_fields.labels | length > 0 %}
+    labels:
+{% for label in job_template.summary_fields.labels.results %}
+      - "{{ label.name }}"
+{% endfor %}
+{% endif %}
+{% set query_notification_error = query(controller_api_plugin, job_template.related.notification_templates_error, host=controller_hostname, oauth_token=controller_oauthtoken, verify_ssl=controller_validate_certs, return_all=true, max_objects=query_controller_api_max_objects) %}
+{% set query_notification_started = query(controller_api_plugin, job_template.related.notification_templates_started, host=controller_hostname, oauth_token=controller_oauthtoken, verify_ssl=controller_validate_certs, return_all=true, max_objects=query_controller_api_max_objects) %}
+{% set query_notification_success = query(controller_api_plugin, job_template.related.notification_templates_success, host=controller_hostname, oauth_token=controller_oauthtoken, verify_ssl=controller_validate_certs, return_all=true, max_objects=query_controller_api_max_objects) %}
+{% if query_notification_error | length > 0 %}
+    notification_templates_error:
+{% for notification_error in query_notification_error %}
+      - "{{ notification_error.name }}"
+{% endfor %}
+{% endif %}
+{% if query_notification_started | length > 0 %}
+    notification_templates_started:
+{% for notification_started in query_notification_started %}
+      - "{{ notification_started.name }}"
+{% endfor %}
+{% endif %}
+{% if query_notification_success | length > 0 %}
+    notification_templates_success:
+{% for notification_success in query_notification_success %}
+      - "{{ notification_success.name }}"
+{% endfor %}
+{% endif %}
+    survey_enabled: {{ job_template.survey_enabled }}
+    survey_spec: {{ query(controller_api_plugin, job_template.related.survey_spec, host=controller_hostname, oauth_token=controller_oauthtoken, verify_ssl=controller_validate_certs)[0] }}
+{% endfor %}
+{# unavailable in AWX 17's API (GET): instance_groups, ask_timeout_on_launch, ask_labels_on_launch #}
+{# ask_job_slice_count_on_launch, ask_forks_on_launch, ask_instance_groups_on_launch #}
+{# ask_execution_environment_on_launch, ask_job_slice_count_on_launch, prevent_instance_group_fallback #}
+{# unsupported currently: webhook_service, webhook_credential #}
+{# unsupported in AWX 17 (PUT): execution_environment #}
+...
