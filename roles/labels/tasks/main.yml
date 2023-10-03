@@ -1,0 +1,23 @@
+- name: Ensure that we have the data fetched for this awx api endpoint
+  include_role:
+    name: fetch_diff_between_current_and_desired_states
+  vars:
+    awx_api_endpoint_name: labels
+
+- name: Update labels
+  awx.awx.label:
+    name: "{{ label.name }}"
+    description: "{{ label.description | default(omit,true) }}"
+    organization: "{{ label.organization }}"
+    #state: "{{ label.state | default(omit,true) }}" only state=present is allowed for labels due to awx constraints (?)
+    # Role Standard Options
+    controller_host: "{{ controller_hostname | default(omit, true) }}"
+    controller_username: "{{ controller_username | default(omit, true) }}"
+    controller_password: "{{ controller_password | default(omit, true) }}"
+    controller_oauthtoken: "{{ controller_oauthtoken | default(omit, true) }}"
+    controller_config_file: "{{ controller_config_file | default(omit, true) }}"
+    validate_certs: "{{ controller_validate_certs | default(omit) }}"
+  loop: "{{ labels_deltas }}"
+  loop_control:
+    loop_var: label
+  #when: false

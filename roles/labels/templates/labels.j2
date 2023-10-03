@@ -1,0 +1,6 @@
+---
+{% for current_labels_asset_value in labels_lookup_results|from_yaml %}
+  - name: "{{ current_labels_asset_value.name }}"
+    organization: "{{ current_labels_asset_value.summary_fields.organization.name }}"
+{% endfor %}
+...
