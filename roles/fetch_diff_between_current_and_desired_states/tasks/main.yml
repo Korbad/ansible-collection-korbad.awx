@@ -1,6 +1,6 @@
 - name: "Fetch current {{ awx_api_endpoint_name }}"
   include_role:
-    name: current_raw_state
+    name: fetch_current_raw_state
 
 - name: "Set fact for the current state of {{ awx_api_endpoint_name }}"
   set_fact:
