@@ -8,3 +8,5 @@ generic_lookvar: "{{ query(controller_api_plugin, api_endpoint_path,
                                      max_objects=query_controller_api_max_objects)
                             }}"
 awx_api_query_params: {'order_by': 'organization,id'}
+controller_api_user_pass: "{{ controller_password }}"
+controller_api_plugin: awx.awx.controller_api
