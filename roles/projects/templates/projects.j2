@@ -1,0 +1,47 @@
+---
+{% for current_project in projects_lookup_results|from_yaml|selectattr('organization') %}
+  - name: "{{ current_project.name }}"
+    description: "{{ current_project.description }}"
+    organization: "{{ current_project.summary_fields.organization.name }}"
+    custom_virtualenv: "{{ current_project.custom_virtualenv }}"
+{% if current_project.scm_type %}
+    scm_type: "{{ current_project.scm_type }}"
+    scm_url: "{{ current_project.scm_url }}"
+{% if current_project.summary_fields.credential is defined %}
+    credential: "{{ current_project.summary_fields.credential.name }}"
+{% endif %}
+    scm_branch: "{{ current_project.scm_branch }}"
+    scm_refspec: "{{ current_project.scm_refspec }}"
+    scm_clean: "{{ current_project.scm_clean }}"
+    scm_delete_on_update: "{{ current_project.scm_delete_on_update }}"
+    scm_update_on_launch: "{{ current_project.scm_update_on_launch }}"
+    scm_update_cache_timeout: "{{ current_project.scm_update_cache_timeout }}"
+{% endif %}
+    allow_override: "{{ current_project.allow_override }}"
+    timeout: {{ current_project.timeout }}
+{% set query_notification_error = query(controller_api_plugin, current_project.related.notification_templates_error, host=controller_hostname, oauth_token=controller_oauthtoken, verify_ssl=controller_validate_certs, return_all=true, max_objects=query_controller_api_max_objects) %}
+{% set query_notification_started = query(controller_api_plugin, current_project.related.notification_templates_started, host=controller_hostname, oauth_token=controller_oauthtoken, verify_ssl=controller_validate_certs, return_all=true, max_objects=query_controller_api_max_objects) %}
+{% set query_notification_success = query(controller_api_plugin, current_project.related.notification_templates_success, host=controller_hostname, oauth_token=controller_oauthtoken, verify_ssl=controller_validate_certs, return_all=true, max_objects=query_controller_api_max_objects) %}
+{% if query_notification_error | length > 0 %}
+    notification_templates_error:
+{% for notification_error in query_notification_error %}
+      - "{{ notification_error.name }}"
+{% endfor %}
+{% endif %}
+{% if query_notification_started | length > 0 %}
+    notification_templates_started:
+{% for notification_started in query_notification_started %}
+      - "{{ notification_started.name }}"
+{% endfor %}
+{% endif %}
+{% if query_notification_success | length > 0 %}
+    notification_templates_success:
+{% for notification_success in query_notification_success %}
+      - "{{ notification_success.name }}"
+{% endfor %}
+{% endif %}
+{% endfor %}
+{# currently unhandled awx.awx.projects parameters: #}
+{# default_environment, local_path, signature_validation_credential #}
+{# scm_track_submodules, wait, update_project, interval #}
+...

@@ -1,0 +1,50 @@
+- name: Ensure that we have the data fetched for this awx api endpoint
+  include_role:
+    name: fetch_diff_between_current_and_desired_states
+  vars:
+    awx_api_endpoint_name: projects
+
+- name: Update projects
+  #awx.awx.project:
+  debug:
+    var: name
+  vars:
+    name: "{{ project.name | mandatory }}"
+    new_name: "{{ project.new_name | default(omit, true) }}"
+    copy_from: "{{ project.copy_from | default(omit, true) }}"
+    description: "{{ project.description | default(omit, true) }}"
+    scm_type: "{{ project.scm_type | default('manual') }}"
+    scm_url: "{{ project.scm_url | default(omit, true) }}"
+    default_environment: "{{ project.default_environment | default(omit, true) }}"
+    local_path: "{{ project.local_path | default(omit, true) }}"
+    scm_branch: "{{ project.scm_branch | default(omit, true) }}"
+    scm_refspec: "{{ project.scm_refspec | default(omit, true) }}"
+    credential: "{{ project.credential.name | default(omit, true))) }}"
+    signature_validation_credential: "{{ project.signature_validation_credential.name | default(omit, true)) }}"
+    scm_clean: "{{ project.scm_clean | default(omit, true) }}"
+    scm_delete_on_update: "{{ project.scm_delete_on_update | default(omit, true) }}"
+    scm_track_submodules: "{{ project.scm_track_submodules | default(omit, true) }}"
+    scm_update_on_launch: "{{ project.scm_update_on_launch | default(omit, true) }}"
+    scm_update_cache_timeout: "{{ project.scm_update_cache_timeout | default(omit, true) }}"
+    allow_override: "{{ project.allow_override | default(omit, true) }}"
+    timeout: "{{ project.job_timeout | default(omit, true)) }}"
+    custom_virtualenv: "{{ project.custom_virtualenv | default(omit, true) }}"
+    organization: "{{ project.organization.name | mandatory }}"
+    state: "{{ project.state | default(omit, true) }}"
+    wait: "{{ project.wait | default(omit, true) }}"
+    update_project: "{{ project.update_project | default(omit, true) }}"
+    interval: "{{ project.interval | default(omit, true) }}"
+    notification_templates_started: "{{ (project.related.notification_templates_started | map(attribute='name') | list if project.related.notification_templates_started is defined else '') | default(project.notification_templates_started) | default(( [] if controller_configuration_projects_enforce_defaults else omit), true) }}"
+    notification_templates_success: "{{ (project.related.notification_templates_success | map(attribute='name') | list if project.related.notification_templates_success is defined else '') | default(project.notification_templates_success) | default(( [] if controller_configuration_projects_enforce_defaults else omit), true) }}"
+    notification_templates_error: "{{ (project.related.notification_templates_error | map(attribute='name') | list if project.related.notification_templates_error is defined else '') | default(project.notification_templates_error) | default(( [] if controller_configuration_projects_enforce_defaults else omit), true) }}"
+    # Role Standard Options
+    controller_host: "{{ controller_hostname | default(omit, true) }}"
+    controller_username: "{{ controller_username | default(omit, true) }}"
+    controller_password: "{{ controller_password | default(omit, true) }}"
+    controller_oauthtoken: "{{ controller_oauthtoken | default(omit, true) }}"
+    controller_config_file: "{{ controller_config_file | default(omit, true) }}"
+    validate_certs: "{{ controller_validate_certs | default(omit) }}"
+  loop: "{{ projects_deltas }}"
+  loop_control:
+    loop_var: project
+  #when: false
