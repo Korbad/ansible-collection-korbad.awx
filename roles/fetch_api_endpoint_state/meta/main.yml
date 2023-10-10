@@ -1,0 +1,3 @@
+dependencies:
+  - authentication
+allow_duplicates: true
