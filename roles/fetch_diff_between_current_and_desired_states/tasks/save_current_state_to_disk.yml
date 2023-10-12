@@ -1,8 +1,0 @@
-- name: "Save current_state_{{ awx_api_endpoint_name }} to a file on Ansible controller"
-  delegate_to: localhost
-  copy:
-    content: "{{ fact_to_save }}"
-    dest: "{{ playbook_dir }}/vars/current_state_{{ awx_api_endpoint_name }}.yml"
-  vars:
-    fact_name: current_state_{{ awx_api_endpoint_name }}
-    fact_to_save: "{{ vars[fact_name] }}"

@@ -1,10 +1,4 @@
-- name: Ensure that we have the data fetched for this awx api endpoint
-  include_role:
-    name: fetch_diff_between_current_and_desired_states
-  vars:
-    awx_api_endpoint_name: labels
-
-- name: Update labels
+- name: Add and modify labels
   awx.awx.label:
     name: "{{ label.name }}"
     description: "{{ label.description | default(omit,true) }}"
@@ -17,7 +11,6 @@
     controller_oauthtoken: "{{ controller_oauthtoken | default(omit, true) }}"
     controller_config_file: "{{ controller_config_file | default(omit, true) }}"
     validate_certs: "{{ controller_validate_certs | default(omit) }}"
-  loop: "{{ labels_deltas }}"
+  loop: "{{ labels_deltas_dict.changed_or_added }}"
   loop_control:
     loop_var: label
-  #when: false

@@ -1,0 +1,103 @@
+- name: "Fetch initial {{ awx_api_endpoint_name }}"
+  ansible.builtin.set_fact:
+    "{{ awx_api_endpoint_name }}_lookup_results": "{{ generic_lookvar }}"
+
+- set_fact:
+    "{{ awx_api_endpoint_name }}_lookup_results_yaml": "{{ vars[lookup_results_name] | to_nice_yaml }}"
+  vars:
+    lookup_results_name: "{{ awx_api_endpoint_name }}_lookup_results"
+
+- name: Save initial raw state to controller
+  include_role:
+    name: korbad.controller.cache_remote_host_var
+  vars:
+    remote_host_var_name: "{{ awx_api_endpoint_name }}_lookup_results_yaml"
+
+- name: "Set fact for the initial state of {{ awx_api_endpoint_name }}"
+  set_fact:
+    "initial_state_{{ awx_api_endpoint_name }}": "{{ lookup('template', awx_template_filename) }}"
+
+- name: Save initial state to controller
+  include_role:
+    name: korbad.controller.cache_remote_host_var
+  vars:
+    remote_host_var_name: "initial_state_{{ awx_api_endpoint_name }}"
+
+- name: "Check if the desired state file exists"
+  stat:
+    path: "{{ playbook_dir }}/vars/{{ inventory_hostname }}/desired_state_{{ awx_api_endpoint_name }}.yml"
+  delegate_to: localhost
+  register: desired_state_file_stat
+
+- name: "Copy initial state to desired state if not exists"
+  copy:
+    src: "{{ playbook_dir }}/vars/{{ inventory_hostname }}/initial_state_{{ awx_api_endpoint_name }}.yml"
+    dest: "{{ playbook_dir }}/vars/{{ inventory_hostname }}/desired_state_{{ awx_api_endpoint_name }}.yml"
+    remote_src: true
+  delegate_to: localhost
+  changed_when: false
+  when: not desired_state_file_stat.stat.exists
+
+- name: Load desired state from controller
+  include_role:
+    name: korbad.controller.load_remote_host_var
+  vars:
+    remote_host_var_name: "desired_state_{{ awx_api_endpoint_name }}"
+
+- name: "Calculate diff state list for {{ awx_api_endpoint_name }}"
+  set_fact:
+    "{{ awx_api_endpoint_name }}_deltas_dict": "{{ lookup('template', 'diff.j2') | from_yaml }}"
+  vars:
+    initial_state_fact_name: "initial_state_{{ awx_api_endpoint_name }}"
+    desired_state_fact_name: "desired_state_{{ awx_api_endpoint_name }}"
+    state_list_before: "{{ vars[initial_state_fact_name] | from_yaml | list }}"
+    state_list_after: "{{ vars[desired_state_fact_name] | from_yaml | list }}"
+
+- name: Save deltas dict to controller
+  include_role:
+    name: korbad.controller.cache_remote_host_var
+  vars:
+    remote_host_var_name: "{{ awx_api_endpoint_name }}_deltas_dict"
+
+- name: Execute tasks to update endpoint
+  include_tasks: "endpoints/{{ awx_api_endpoint_name }}.yml"
+
+- name: "Fetch final state {{ awx_api_endpoint_name }}"
+  ansible.builtin.set_fact:
+    "{{ awx_api_endpoint_name }}_lookup_results": "{{ generic_lookvar }}"
+
+- name: "Set fact for the final state of {{ awx_api_endpoint_name }}"
+  set_fact:
+    "final_state_{{ awx_api_endpoint_name }}": "{{ lookup('template', awx_template_filename) }}"
+
+- name: Save final state to controller
+  include_role:
+    name: korbad.controller.cache_remote_host_var
+  vars:
+    remote_host_var_name: "final_state_{{ awx_api_endpoint_name }}"
+
+- name: "Diff between final and desired for {{ awx_api_endpoint_name }}, these are changes that automation could not make"
+  set_fact:
+    "{{ awx_api_endpoint_name }}_deltas_dict_final": "{{ lookup('template', 'diff.j2') | from_yaml }}"
+  vars:
+    before_state_fact_name: "final_state_{{ awx_api_endpoint_name }}"
+    after_state_fact_name: "desired_state_{{ awx_api_endpoint_name }}"
+    state_list_before: "{{ vars[before_state_fact_name] | from_yaml | list }}"
+    state_list_after: "{{ vars[after_state_fact_name] | from_yaml | list }}"
+
+- name: "Diff between final and initial for {{ awx_api_endpoint_name }}, these are changes that automation made"
+  set_fact:
+    "{{ awx_api_endpoint_name }}_deltas_initial_final": "{{ lookup('template', 'diff.j2') | from_yaml }}"
+  vars:
+    before_state_fact_name: "initial_state_{{ awx_api_endpoint_name }}"
+    after_state_fact_name: "final_state_{{ awx_api_endpoint_name }}"
+    state_list_before: "{{ vars[before_state_fact_name] | from_yaml | list }}"
+    state_list_after: "{{ vars[after_state_fact_name] | from_yaml | list }}"
+
+- name: "Diff between final and desired for {{ awx_api_endpoint_name }}, these are changes that automation could not make"
+  debug:
+    var: "{{ awx_api_endpoint_name }}_deltas_dict_final"
+
+- name: "Diff between final and desired for {{ awx_api_endpoint_name }}, these are changes that automation made"
+  debug:
+    var: "{{ awx_api_endpoint_name }}_deltas_initial_final"

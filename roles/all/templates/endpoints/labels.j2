@@ -1,0 +1,6 @@
+---
+{% for label in labels_lookup_results|from_yaml %}
+  - name: "{{ label.name }}"
+    organization: "{{ label.summary_fields.organization.name }}"
+{% endfor %}
+...

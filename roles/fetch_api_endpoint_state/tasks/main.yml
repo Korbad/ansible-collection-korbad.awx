@@ -1,6 +1,0 @@
-- name: "Fetch current {{ awx_api_endpoint_name }}"
-  ansible.builtin.set_fact:
-    "{{ awx_api_endpoint_name }}_lookup_results": "{{ generic_lookvar }}"
-    cacheable: true
-  vars:
-    api_endpoint_path: "api/v2/{{ awx_api_endpoint_name }}/"

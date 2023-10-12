@@ -1,19 +1,11 @@
-- name: Ensure that we have the data fetched for this awx api endpoint
-  include_role:
-    name: fetch_diff_between_current_and_desired_states
-  vars:
-    awx_api_endpoint_name: job_templates
-
-# needs checking
-- name: Update job templates
+- name: Add and modify job templates
   awx.awx.job_template:
     name: "{{ job_template.name | mandatory }}"
     description: "{{ job_template.description | default(omit, true) }}"
-    execution_environment: "{{ job_template.execution_environment.name | default(omit, true) }}"
     custom_virtualenv: "{{ job_template.custom_virtualenv | default(omit, true) }}"
-    job_type: "{{ job_template.job_type }}"
-    inventory: "{{ job_template.inventory.name | default(omit, true) }}"
-    organization: "{{ job_template.organization.name }}"
+    job_type: "{{ job_template.job_type | default(omit, true)  }}"
+    inventory: "{{ job_template.inventory | default(omit, true) }}"
+    organization: "{{ job_template.organization }}"
     project: "{{ job_template.project.name | default(omit, true) }}"
     playbook: "{{ job_template.playbook | default(omit, true) }}"
     credentials: "{{ job_template.credentials | default(omit, true) }}"
@@ -32,8 +24,8 @@
     ask_diff_mode_on_launch: "{{ job_template.ask_diff_mode_on_launch | default(omit, true) }}"
     ask_variables_on_launch: "{{ job_template.ask_variables_on_launch | default(omit, true) }}"
     ask_limit_on_launch: "{{ job_template.ask_limit_on_launch | default(omit, true) }}"
-    ask_tags_on_launch: "{{ job_template.ask_tags | default(omit, true)) }}"
-    ask_skip_tags_on_launch: "{{ job_template.ask_skip_tags | default(omit, true)) }}"
+    ask_tags_on_launch: "{{ job_template.ask_tags | default(omit, true) }}"
+    ask_skip_tags_on_launch: "{{ job_template.ask_skip_tags | default(omit, true) }}"
     ask_job_type_on_launch: "{{ job_template.ask_job_type_on_launch | default(omit, true) }}"
     ask_verbosity_on_launch: "{{ job_template.ask_verbosity_on_launch | default(omit, true) }}"
     ask_inventory_on_launch: "{{ job_template.ask_inventory_on_launch | default(omit, true) }}"
@@ -55,12 +47,11 @@
     webhook_service: "{{ job_template.webhook_service | default(omit, true) }}"
     webhook_credential: "{{ job_template.webhook_credential | default(omit, true) }}"
     scm_branch: "{{ job_template.scm_branch | default(omit, true) }}"
-    labels: "{{ (job_template.related.labels | map(attribute='name') | list if job_template.related.labels is defined else '') | default(job_template.labels) | default(omit, true) }}"
-    state: "{{ job_template.state | default(controller_state | default('present')) }}"
-    notification_templates_started: "{{ (job_template.related.notification_templates_started | map(attribute='name') | list if job_template.related.notification_templates_started is defined else '') | default(job_template.notification_templates_started) | default(( [] if controller_configuration_job_templates_enforce_defaults else omit), true) }}"
-    notification_templates_success: "{{ (job_template.related.notification_templates_success | map(attribute='name') | list if job_template.related.notification_templates_success is defined else '') | default(job_template.notification_templates_success) | default(( [] if controller_configuration_job_templates_enforce_defaults else omit), true) }}"
-    notification_templates_error: "{{ (job_template.related.notification_templates_error | map(attribute='name') | list if job_template.related.notification_templates_error is defined else '') | default(job_template.notification_templates_error) | default(( [] if controller_configuration_job_templates_enforce_defaults else omit), true) }}"
-
+    labels: "{{ job_template.labels | default(omit, true) }}"
+    state: "{{ job_template.state | default(omit, true) }}"
+    notification_templates_started: "{{ job_template.notification_templates_started | default(omit, true) }}"
+    notification_templates_success: "{{ job_template.notification_templates_success | default(omit, true) }}"
+    notification_templates_error: "{{ job_template.notification_templates_error | default(omit, true) }}"
     # Role Standard Options
     controller_host: "{{ controller_hostname | default(omit, true) }}"
     controller_username: "{{ controller_username | default(omit, true) }}"
@@ -68,7 +59,52 @@
     controller_oauthtoken: "{{ controller_oauthtoken | default(omit, true) }}"
     controller_config_file: "{{ controller_config_file | default(omit, true) }}"
     validate_certs: "{{ controller_validate_certs | default(omit) }}"
-  loop: "{{ job_templates_deltas }}"
+  loop: "{{ job_templates_deltas_dict.changed_or_added }}"
   loop_control:
     loop_var: job_template
-  when: false
+  async: 1000
+  poll: 0
+  register: job_template_update_async
+
+- name: "Configure Controller Projects | Wait for finish the job_template creation"
+  ansible.builtin.async_status:
+    jid: "{{ job_async_result.ansible_job_id }}"
+  register: job_template_update_async_result
+  until: job_template_update_async_result.finished
+  retries: 50
+  delay: 10
+  loop: "{{ job_template_update_async.results }}"
+  loop_control:
+    loop_var: job_async_result
+  when: job_async_result.ansible_job_id is defined
+
+- name: Remove job templates
+  awx.awx.job_template:
+    name: "{{ job_template.name | mandatory }}"
+    state: "{{ job_template.state | default(omit, true) }}"
+    # Role Standard Options
+    controller_host: "{{ controller_hostname | default(omit, true) }}"
+    controller_username: "{{ controller_username | default(omit, true) }}"
+    controller_password: "{{ controller_password | default(omit, true) }}"
+    controller_oauthtoken: "{{ controller_oauthtoken | default(omit, true) }}"
+    controller_config_file: "{{ controller_config_file | default(omit, true) }}"
+    validate_certs: "{{ controller_validate_certs | default(omit) }}"
+  loop: "{{ job_templates_deltas_dict.removed }}"
+  loop_control:
+    loop_var: job_template
+  when: job_templates_deltas_dict.removed is defined
+  async: 1000
+  poll: 0
+  register: job_template_removals_async
+
+- name: "Configure Controller Projects | Wait for finish the job_template creation"
+  ansible.builtin.async_status:
+    jid: "{{ _job_async_result.ansible_job_id }}"
+  register: job_template_removals_async_result
+  until: job_template_removals_async_result.finished
+  retries: 50
+  delay: 10
+  loop: "{{ job_template_removals_async.results }}"
+  loop_control:
+    loop_var: _job_async_result
+  when: _job_async_result.ansible_job_id is defined

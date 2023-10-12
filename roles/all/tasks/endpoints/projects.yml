@@ -1,0 +1,80 @@
+- name: Add and modify projects
+  awx.awx.project:
+    name: "{{ project.name }}"
+    description: "{{ project.description | default(omit, true) }}"
+    scm_type: "{{ project.scm_type | default('manual') }}"
+    scm_url: "{{ project.scm_url | default(omit, true) }}"
+    scm_branch: "{{ project.scm_branch | default(omit, true) }}"
+    scm_refspec: "{{ project.scm_refspec | default(omit, true) }}"
+    credential: "{{ project.credential | default(omit, true) }}"
+    scm_clean: "{{ project.scm_clean | default(omit, true) }}"
+    scm_delete_on_update: "{{ project.scm_delete_on_update | default(omit, true) }}"
+    scm_update_on_launch: "{{ project.scm_update_on_launch | default(omit, true) }}"
+    scm_update_cache_timeout: "{{ project.scm_update_cache_timeout | default(omit, true) }}"
+    allow_override: "{{ project.allow_override | default(omit, true) }}"
+    timeout: "{{ project.job_timeout | default(omit, true) }}"
+    custom_virtualenv: "{{ project.custom_virtualenv | default(omit, true) }}"
+    organization: "{{ project.organization }}"
+    state: "{{ project.state | default(omit, true) }}"
+    notification_templates_started: "{{ project.notification_templates_started | default(omit, true) }}"
+    notification_templates_success: "{{ project.notification_templates_success | default(omit, true) }}"
+    notification_templates_error: "{{ project.notification_templates_error | default(omit, true) }}"
+    # Role Standard Options
+    controller_host: "{{ controller_hostname | default(omit, true) }}"
+    controller_username: "{{ controller_username | default(omit, true) }}"
+    controller_password: "{{ controller_password | default(omit, true) }}"
+    controller_oauthtoken: "{{ controller_oauthtoken | default(omit, true) }}"
+    controller_config_file: "{{ controller_config_file | default(omit, true) }}"
+    validate_certs: "{{ controller_validate_certs | default(omit) }}"
+  loop: "{{ projects_deltas_dict.changed_or_added }}"
+  loop_control:
+    loop_var: project
+  async: 1000
+  poll: 0
+  register: projects_job_async
+  #changed_when: not projects_job_async.changed
+  
+- name: Waiting for project additions and modifications
+  ansible.builtin.async_status:
+    jid: "{{ job_async_result.ansible_job_id }}"
+  register: projects_job_async_result
+  until: projects_job_async_result.finished
+  retries: 50
+  delay: 10
+  loop: "{{ projects_job_async.results }}"
+  loop_control:
+    loop_var: job_async_result
+  when: job_async_result.ansible_job_id is defined
+
+- name: Project removals
+  awx.awx.project:
+    name: "{{ project.name }}"
+    organization: "{{ project.organization }}"
+    state: "{{ project.state | default(omit, true) }}"
+    # Role Standard Options
+    controller_host: "{{ controller_hostname | default(omit, true) }}"
+    controller_username: "{{ controller_username | default(omit, true) }}"
+    controller_password: "{{ controller_password | default(omit, true) }}"
+    controller_oauthtoken: "{{ controller_oauthtoken | default(omit, true) }}"
+    controller_config_file: "{{ controller_config_file | default(omit, true) }}"
+    validate_certs: "{{ controller_validate_certs | default(omit) }}"
+  loop: "{{ projects_deltas_dict.removed }}"
+  loop_control:
+    loop_var: project
+  when: projects_deltas_dict.removed is defined
+  async: 1000
+  poll: 0
+  register: projects_job_async_removals
+
+- name: Waiting for project removals
+  ansible.builtin.async_status:
+    jid: "{{ job_async_result.ansible_job_id }}"
+  register: projects_job_async_removals_result
+  until: projects_job_async_removals_result.finished
+  retries: 50
+  delay: 10
+  loop: "{{ projects_job_async_removals.results }}"
+  loop_control:
+    loop_var: job_async_result
+  when: job_async_result.ansible_job_id is defined
+

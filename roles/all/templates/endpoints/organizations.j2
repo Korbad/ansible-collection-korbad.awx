@@ -1,0 +1,30 @@
+---
+{% for organization in organizations_lookup_results|from_yaml %}
+  - name: "{{ organization.name }}"
+    description: "{{ organization.description }}"
+    id: "{{ organization.id }}"
+    custom_virtualenv: "{{ organization.custom_virtualenv }}"
+    max_hosts: "{{ organization.max_hosts }}"
+{% set query_notification_error = query(controller_api_plugin, organization.related.notification_templates_error, host=controller_hostname, oauth_token=controller_oauthtoken, verify_ssl=controller_validate_certs, return_all=true, max_objects=query_controller_api_max_objects) %}
+{% set query_notification_started = query(controller_api_plugin, organization.related.notification_templates_started, host=controller_hostname, oauth_token=controller_oauthtoken, verify_ssl=controller_validate_certs, return_all=true, max_objects=query_controller_api_max_objects) %}
+{% set query_notification_success = query(controller_api_plugin, organization.related.notification_templates_success, host=controller_hostname, oauth_token=controller_oauthtoken, verify_ssl=controller_validate_certs, return_all=true, max_objects=query_controller_api_max_objects) %}
+{% if query_notification_error | length > 0 %}
+    notification_templates_error:
+{% for notification_error in query_notification_error %}
+      - "{{ notification_error.name }}"
+{% endfor %}
+{% endif %}
+{% if query_notification_started | length > 0 %}
+    notification_templates_started:
+{% for notification_started in query_notification_started %}
+      - "{{ notification_started.name }}"
+{% endfor %}
+{% endif %}
+{% if query_notification_success | length > 0 %}
+    notification_templates_success:
+{% for notification_success in query_notification_success %}
+      - "{{ notification_success.name }}"
+{% endfor %}
+{% endif %}
+{% endfor %}
+...
