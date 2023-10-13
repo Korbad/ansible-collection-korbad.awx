@@ -1,0 +1,5 @@
+---
+{% for setting in settings_lookup_results|from_yaml %}
+  - name: "{{ setting.name }}"
+{% endfor %}
+...

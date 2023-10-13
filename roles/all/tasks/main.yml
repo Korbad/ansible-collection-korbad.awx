@@ -1,6 +1,6 @@
 - name: "Fetch initial {{ awx_api_endpoint_name }}"
   ansible.builtin.set_fact:
-    "{{ awx_api_endpoint_name }}_lookup_results": "{{ generic_lookvar }}"
+    "{{ awx_api_endpoint_name }}_lookup_results": "{{ awx_api_query_by_endpoint_path }}"
 
 - set_fact:
     "{{ awx_api_endpoint_name }}_lookup_results_yaml": "{{ vars[lookup_results_name] | to_nice_yaml }}"
@@ -8,8 +8,7 @@
     lookup_results_name: "{{ awx_api_endpoint_name }}_lookup_results"
 
 - name: Save initial raw state to controller
-  include_role:
-    name: korbad.controller.cache_remote_host_var
+  include_tasks: controller_cache.yml
   vars:
     remote_host_var_name: "{{ awx_api_endpoint_name }}_lookup_results_yaml"
 
@@ -18,31 +17,34 @@
     "initial_state_{{ awx_api_endpoint_name }}": "{{ lookup('template', awx_template_filename) }}"
 
 - name: Save initial state to controller
-  include_role:
-    name: korbad.controller.cache_remote_host_var
+  include_tasks: controller_cache.yml
   vars:
     remote_host_var_name: "initial_state_{{ awx_api_endpoint_name }}"
 
 - name: "Check if the desired state file exists"
   stat:
-    path: "{{ playbook_dir }}/vars/{{ inventory_hostname }}/desired_state_{{ awx_api_endpoint_name }}.yml"
+    path: "{{ controller_cache_path_for_host }}/desired_state_{{ awx_api_endpoint_name }}.yml"
   delegate_to: localhost
   register: desired_state_file_stat
 
 - name: "Copy initial state to desired state if not exists"
   copy:
-    src: "{{ playbook_dir }}/vars/{{ inventory_hostname }}/initial_state_{{ awx_api_endpoint_name }}.yml"
-    dest: "{{ playbook_dir }}/vars/{{ inventory_hostname }}/desired_state_{{ awx_api_endpoint_name }}.yml"
+    src: "{{ controller_cache_path_for_host }}/initial_state_{{ awx_api_endpoint_name }}.yml"
+    dest: "{{ controller_cache_path_for_host }}/desired_state_{{ awx_api_endpoint_name }}.yml"
     remote_src: true
   delegate_to: localhost
   changed_when: false
+  check_mode: no
   when: not desired_state_file_stat.stat.exists
 
 - name: Load desired state from controller
-  include_role:
-    name: korbad.controller.load_remote_host_var
+  set_fact:
+    "{{ remote_host_var_name }}": "{{ lookup('file', path_to_file_on_controller) }}"
+    cacheable: true
   vars:
     remote_host_var_name: "desired_state_{{ awx_api_endpoint_name }}"
+    path_to_file_on_controller: "{{ controller_cache_path_for_host }}/{{ remote_host_var_name }}.yml"
+
 
 - name: "Calculate diff state list for {{ awx_api_endpoint_name }}"
   set_fact:
@@ -54,8 +56,7 @@
     state_list_after: "{{ vars[desired_state_fact_name] | from_yaml | list }}"
 
 - name: Save deltas dict to controller
-  include_role:
-    name: korbad.controller.cache_remote_host_var
+  include_tasks: controller_cache.yml
   vars:
     remote_host_var_name: "{{ awx_api_endpoint_name }}_deltas_dict"
 
@@ -64,15 +65,14 @@
 
 - name: "Fetch final state {{ awx_api_endpoint_name }}"
   ansible.builtin.set_fact:
-    "{{ awx_api_endpoint_name }}_lookup_results": "{{ generic_lookvar }}"
+    "{{ awx_api_endpoint_name }}_lookup_results": "{{ awx_api_query_by_endpoint_path }}"
 
 - name: "Set fact for the final state of {{ awx_api_endpoint_name }}"
   set_fact:
     "final_state_{{ awx_api_endpoint_name }}": "{{ lookup('template', awx_template_filename) }}"
 
 - name: Save final state to controller
-  include_role:
-    name: korbad.controller.cache_remote_host_var
+  include_tasks: controller_cache.yml
   vars:
     remote_host_var_name: "final_state_{{ awx_api_endpoint_name }}"
 
@@ -93,11 +93,3 @@
     after_state_fact_name: "final_state_{{ awx_api_endpoint_name }}"
     state_list_before: "{{ vars[before_state_fact_name] | from_yaml | list }}"
     state_list_after: "{{ vars[after_state_fact_name] | from_yaml | list }}"
-
-- name: "Diff between final and desired for {{ awx_api_endpoint_name }}, these are changes that automation could not make"
-  debug:
-    var: "{{ awx_api_endpoint_name }}_deltas_dict_final"
-
-- name: "Diff between final and desired for {{ awx_api_endpoint_name }}, these are changes that automation made"
-  debug:
-    var: "{{ awx_api_endpoint_name }}_deltas_initial_final"

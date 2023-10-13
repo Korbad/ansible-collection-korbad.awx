@@ -1,0 +1,6 @@
+---
+{% for workflow_job_template in workflow_job_templates_lookup_results|from_yaml %}
+  - name: "{{ workflow_job_template.name }}"
+    organization: "{{ workflow_job_template.organization }}"
+{% endfor %}
+...

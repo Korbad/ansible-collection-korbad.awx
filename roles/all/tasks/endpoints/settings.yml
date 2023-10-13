@@ -1,0 +1,14 @@
+- name: Add and modify settings
+  debug:
+    var: setting
+  loop: "{{ settings_deltas_dict.changed_or_added }}"
+  loop_control:
+    loop_var: setting
+
+- name: Remove settings
+  debug:
+    var: setting
+  loop: "{{ settings_deltas_dict.removed }}"
+  loop_control:
+    loop_var: setting
+  when: settings_deltas_dict.removed is defined

@@ -1,0 +1,14 @@
+- name: Add and modify schedules
+  debug:
+    var: schedule
+  loop: "{{ schedules_deltas_dict.changed_or_added }}"
+  loop_control:
+    loop_var: schedule
+
+- name: Remove schedules
+  debug:
+    var: schedule
+  loop: "{{ schedules_deltas_dict.removed }}"
+  loop_control:
+    loop_var: schedule
+  when: schedules_deltas_dict.removed is defined

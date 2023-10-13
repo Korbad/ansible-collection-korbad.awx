@@ -1,0 +1,14 @@
+- name: Add and modify instance_groups
+  debug:
+    var: instance_group
+  loop: "{{ instance_groups_deltas_dict.changed_or_added }}"
+  loop_control:
+    loop_var: instance_group
+
+- name: Remove instance_groups
+  debug:
+    var: instance_group
+  loop: "{{ instance_groups_deltas_dict.removed }}"
+  loop_control:
+    loop_var: instance_group
+  when: instance_groups_deltas_dict.removed is defined

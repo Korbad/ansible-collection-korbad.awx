@@ -6,7 +6,7 @@
     job_type: "{{ job_template.job_type | default(omit, true)  }}"
     inventory: "{{ job_template.inventory | default(omit, true) }}"
     organization: "{{ job_template.organization }}"
-    project: "{{ job_template.project.name | default(omit, true) }}"
+    project: "{{ job_template.project }}"
     playbook: "{{ job_template.playbook | default(omit, true) }}"
     credentials: "{{ job_template.credentials | default(omit, true) }}"
     forks: "{{ job_template.forks | default(omit, true) }}"

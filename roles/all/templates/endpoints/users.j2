@@ -1,0 +1,6 @@
+---
+{% for user in users_lookup_results|from_yaml %}
+  - name: "{{ user.name }}"
+    organization: "{{ user.organization }}"
+{% endfor %}
+...

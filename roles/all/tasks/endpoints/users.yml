@@ -1,0 +1,14 @@
+- name: Add and modify users
+  debug:
+    var: user
+  loop: "{{ users_deltas_dict.changed_or_added }}"
+  loop_control:
+    loop_var: user
+
+- name: Remove users
+  debug:
+    var: user
+  loop: "{{ users_deltas_dict.removed }}"
+  loop_control:
+    loop_var: user
+  when: users_deltas_dict.removed is defined

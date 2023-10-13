@@ -1,0 +1,17 @@
+- name: Ensure that the vars cache dir for inventory_hostname exists
+  file:
+    path: "{{ playbook_dir }}/vars/{{ inventory_hostname }}"
+    state: directory
+  check_mode: no
+  changed_when: false
+  delegate_to: localhost
+
+- name: "Save {{ remote_host_var_name }} to a file on Ansible controller"
+  copy:
+    content: "{{ value_to_cache }}"
+    dest: "{{ playbook_dir }}/vars/{{ inventory_hostname }}/{{ remote_host_var_name }}.yml"
+  vars:
+    value_to_cache: "{{ vars[remote_host_var_name] }}"
+  changed_when: false
+  check_mode: no
+  delegate_to: localhost

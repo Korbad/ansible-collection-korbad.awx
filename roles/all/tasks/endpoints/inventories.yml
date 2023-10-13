@@ -1,0 +1,40 @@
+- name: Add and modify inventories
+  awx.awx.inventory:
+    name: "{{ inventory.name }}"
+    description: "{{ inventory.description | default(omit,true) }}"
+    organization: "{{ inventory.organization }}"
+    instance_groups: "{{ inventory.instance_groups | default(omit,true) }}"
+    input_inventories: "{{ inventory.input_inventories | default(omit,true)  }}"
+    variables: "{{ inventory.variables | default(omit,true) }}"
+    kind: "{{ inventory.kind | default(omit,true) }}"
+    host_filter: "{{ inventory.host_filter | default(omit,true) }}"
+    prevent_instance_group_fallback: "{{ inventory.prevent_instance_group_fallback | default(omit,true) }}"
+    state: "{{ inventory.state | default(omit,true) }}"
+    # Role Standard Options
+    controller_host: "{{ controller_hostname | default(omit, true) }}"
+    controller_username: "{{ controller_username | default(omit, true) }}"
+    controller_password: "{{ controller_password | default(omit, true) }}"
+    controller_oauthtoken: "{{ controller_oauthtoken | default(omit, true) }}"
+    controller_config_file: "{{ controller_config_file | default(omit, true) }}"
+    validate_certs: "{{ controller_validate_certs | default(omit) }}"
+  loop: "{{ inventories_deltas_dict.changed_or_added }}"
+  loop_control:
+    loop_var: inventory
+
+- name: Remove inventories
+  awx.awx.inventory:
+    name: "{{ inventory.name }}"
+    state: "{{ inventory.state | default(omit,true) }}"
+    organization: "{{ inventory.organization }}"
+    # Role Standard Options
+    controller_host: "{{ controller_hostname | default(omit, true) }}"
+    controller_username: "{{ controller_username | default(omit, true) }}"
+    controller_password: "{{ controller_password | default(omit, true) }}"
+    controller_oauthtoken: "{{ controller_oauthtoken | default(omit, true) }}"
+    controller_config_file: "{{ controller_config_file | default(omit, true) }}"
+    validate_certs: "{{ controller_validate_certs | default(omit) }}"
+  loop: "{{ inventories_deltas_dict.removed }}"
+  loop_control:
+    loop_var: inventory
+  when: inventories_deltas_dict.removed is defined
+

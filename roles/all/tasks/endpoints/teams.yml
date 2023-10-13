@@ -1,0 +1,14 @@
+- name: Add and modify teams
+  debug:
+    var: team
+  loop: "{{ teams_deltas_dict.changed_or_added }}"
+  loop_control:
+    loop_var: team
+
+- name: Remove teams
+  debug:
+    var: team
+  loop: "{{ teams_deltas_dict.removed }}"
+  loop_control:
+    loop_var: team
+  when: teams_deltas_dict.removed is defined

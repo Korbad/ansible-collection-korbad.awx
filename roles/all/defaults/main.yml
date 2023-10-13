@@ -1,5 +1,5 @@
 query_controller_api_max_objects: 10000
-generic_lookvar: "{{ query(controller_api_plugin, awx_api_endpoint_path,
+awx_api_query_by_endpoint_path: "{{ query(controller_api_plugin, awx_api_endpoint_path,
                                      query_params=awx_api_query_params,
                                      host=controller_hostname, 
                                      oauth_token=controller_oauthtoken, 
@@ -12,3 +12,24 @@ controller_api_user_pass: "{{ controller_password }}"
 controller_api_plugin: awx.awx.controller_api
 awx_api_endpoint_path: "api/v2/{{ awx_api_endpoint_name }}/"
 awx_template_filename: "endpoints/{{ awx_api_endpoint_name }}.j2"
+awx_api_endpoint_names:
+  - organizations
+  - labels
+  - notification_templates
+  - projects
+  - inventories
+  - job_templates
+  - credential_types
+  - credentials
+  - instance_groups
+  - schedules
+  - settings
+  - teams
+  - users
+  - workflow_job_templates
+organization_id: "{{ lookup(controller_api_plugin, 'organizations',
+                            query_params={'name': organization_name},
+                            host=controller_hostname, oauth_token=controller_oauthtoken,
+                            verify_ssl=controller_validate_certs).id
+                  }}"
+controller_cache_path_for_host: "{{ playbook_dir }}/vars/{{ inventory_hostname }}"

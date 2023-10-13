@@ -1,0 +1,9 @@
+---
+{% for inventory in inventories_lookup_results|from_yaml %}
+  - name: "{{ inventory.name }}"
+    description: "{{ inventory.description }}"
+    organization: "{{ inventory.organization }}"
+    kind: "{{ inventory.kind }}"
+    host_filter: "{{ inventory.host_filter }}"
+{% endfor %}
+...

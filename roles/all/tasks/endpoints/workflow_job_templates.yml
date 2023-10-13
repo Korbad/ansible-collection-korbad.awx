@@ -1,0 +1,14 @@
+- name: Add and modify workflow_job_templates
+  debug:
+    var: workflow_job_template
+  loop: "{{ workflow_job_templates_deltas_dict.changed_or_added }}"
+  loop_control:
+    loop_var: workflow_job_template
+
+- name: Remove workflow_job_templates
+  debug:
+    var: workflow_job_template
+  loop: "{{ workflow_job_templates_deltas_dict.removed }}"
+  loop_control:
+    loop_var: workflow_job_template
+  when: workflow_job_templates_deltas_dict.removed is defined

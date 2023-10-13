@@ -1,0 +1,6 @@
+---
+{% for team in teams_lookup_results|from_yaml %}
+  - name: "{{ team.name }}"
+    organization: "{{ team.organization }}"
+{% endfor %}
+...
