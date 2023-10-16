@@ -3,9 +3,9 @@
     name: "{{ notification_template.name }}"
     description: "{{ notification_template.description | default(omit,true) }}"
     organization: "{{ notification_template.organization }}"
-    notification_type: "{{ notification_template.notification_type }}"
-    notification_configuration: "{{ notification_template.notification_configuration  }}"
-    messages: "{{ notification_template.messages }}"
+    notification_type: "{{ notification_template.notification_type | default(omit,true) }}"
+    notification_configuration: "{{ notification_template.notification_configuration | default(omit,true)  }}"
+    messages: "{{ notification_template.messages | default(omit,true)  }}"
     state: "{{ notification_template.state | default(omit,true) }}"
     # Role Standard Options
     controller_host: "{{ controller_hostname | default(omit, true) }}"
@@ -21,12 +21,8 @@
 - name: Remove notification templates
   awx.awx.notification_template:
     name: "{{ notification_template.name }}"
-    description: "{{ notification_template.description | default(omit,true) }}"
     organization: "{{ notification_template.organization }}"
-    notification_type: "{{ notification_template.notification_type }}"
-    notification_configuration: "{{ notification_template.notification_configuration  }}"
-    messages: "{{ notification_template.messages }}"
-    state: "{{ notification_template.state | default(omit,true) }}"
+    state: "{{ notification_template.state }}"
     # Role Standard Options
     controller_host: "{{ controller_hostname | default(omit, true) }}"
     controller_username: "{{ controller_username | default(omit, true) }}"
