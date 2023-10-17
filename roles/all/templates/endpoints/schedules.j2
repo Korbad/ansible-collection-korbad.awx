@@ -1,5 +1,83 @@
 ---
 {% for schedule in schedules_lookup_results|from_yaml %}
   - name: "{{ schedule.name }}"
+{% if schedule.description is defined %}
+    description: "{{ schedule.description }}"
+{% endif %}
+    enabled: "{{ schedule.enabled }}"
+    unified_job_template: "{{ schedule.summary_fields.unified_job_template.name }}"
+{% if schedule.summary_fields.inventory is defined %}
+    inventory: "{{ schedule.summary_fields.inventory.name }}"
+{% endif %}
+{% set query_instance_groups = query(controller_api_plugin, current_schedules_asset_value.related.instance_groups, host=controller_hostname, oauth_token=controller_oauthtoken, verify_ssl=controller_validate_certs, return_all=true, max_objects=query_controller_api_max_objects) %}
+{% set query_credentials = query(controller_api_plugin, current_schedules_asset_value.related.credentials, host=controller_hostname, oauth_token=controller_oauthtoken, verify_ssl=controller_validate_certs, return_all=true, max_objects=query_controller_api_max_objects) %}
+{% set query_labels = query(controller_api_plugin, current_schedules_asset_value.related.labels, host=controller_hostname, oauth_token=controller_oauthtoken, verify_ssl=controller_validate_certs, return_all=true, max_objects=query_controller_api_max_objects) %}
+{% if query_instance_groups | length > 0 %}
+    instance_groups:
+{% for instance_group in query_instance_groups %}
+      - "{{ instance_group.name }}"
+{% endfor %}
+{% endif %}
+{% if schedule.dtstart is defined %}
+    dtstart: "{{ schedule.dtstart }}"
+{% endif %}
+{% if schedule.dtend is defined %}
+    dtend: "{{ schedule.dtend }}"
+{% endif %}
+{% if schedule.timezone is defined %}
+    timezone: "{{ schedule.timezone }}"
+{% endif %}
+{% if schedule.rrule is defined %}
+    rrule: "{{ schedule.rrule }}"
+{% endif %}
+{% if schedule.summary_fields.execution_environment is defined %}
+    execution_environment: "{{ schedule.summary_fields.execution_environment.name }}"
+{% endif %}
+{% if schedule.extra_data is defined %}
+    extra_data:
+      {{ schedule.extra_data | from_yaml | to_nice_yaml(indent=2) | indent(width=6, first=False) | replace("'{{", "!unsafe \'{{") }}
+{%- endif -%}
+{% if query_credentials | length > 0 %}
+    credentials:
+{% for credential in query_credentials %}
+      - "{{ credential.name }}"
+{% endfor %}
+{% endif %}
+{% if schedule.scm_branch is defined %}
+    scm_branch: "{{ schedule.scm_branch }}"
+{% endif %}
+{% if schedule.forks is defined %}
+    forks: {{ schedule.forks | int }}
+{% endif %}
+{% if schedule.job_slice_count is defined %}
+    job_slice_count: {{ schedule.job_slice_count | int }}
+{% endif %}
+{% if query_labels | length > 0 %}
+    labels:
+{% for label in query_labels %}
+      - "{{ label.name }}"
+{% endfor %}
+{% endif %}
+{% if schedule.timeout is defined %}
+    timeout: {{ schedule.timeout | int }}
+{% endif %}
+{% if schedule.job_type is defined %}
+    job_type: "{{ schedule.job_type }}"
+{% endif %}
+{% if schedule.job_tags is defined %}
+    job_tags: "{{ schedule.job_tags }}"
+{% endif %}
+{% if schedule.skip_tags is defined %}
+    skip_tags: "{{ schedule.skip_tags }}"
+{% endif %}
+{% if schedule.limit is defined %}
+    limit: "{{ schedule.limit }}"
+{% endif %}
+{% if schedule.diff_mode is defined and schedule.diff_mode | type_debug != "NoneType" %}
+    diff_mode: {{ schedule.diff_mode | bool }}
+{% endif %}
+{% if schedule.verbosity is defined %}
+    verbosity: {{ schedule.verbosity | int }}
+{% endif %}
 {% endfor %}
 ...
