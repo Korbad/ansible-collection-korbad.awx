@@ -32,4 +32,4 @@ organization_id: "{{ lookup(controller_api_plugin, 'organizations',
                             host=controller_hostname, oauth_token=controller_oauthtoken,
                             verify_ssl=controller_validate_certs).id
                   }}"
-controller_cache_path_for_host: "{{ playbook_dir }}/vars/{{ inventory_hostname }}"
+controller_cache_path_for_host: "{{ playbook_dir }}/awx_state_cache/{{ inventory_hostname }}"
